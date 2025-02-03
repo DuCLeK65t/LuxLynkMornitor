@@ -10,8 +10,7 @@
 The **LuxLynkMonitor** project monitors light intensity through GY-30 BH1750 sensor by STM32F103C8T6, transmits BLE data through JDY-31 Module to Gateway ESP32 and displays it visually on Blynk platform
 
 <div align="center">
-  <img src="![image](https://github.com/user-attachments/assets/18e32018-c3f8-4135-88a7-bdcc82ab5d85)
-">
+  <img src="https://github.com/user-attachments/assets/e940f9f9-85ef-4f02-9487-af3bfa0232a7">
 </div>
 
 ---
