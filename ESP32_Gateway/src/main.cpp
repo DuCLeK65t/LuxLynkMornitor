@@ -6,7 +6,8 @@
 #include <BLEScan.h>
 #include <BLEAdvertisedDevice.h>
 
-#define TARGET_ADDRESS "xx:xx:xx:xx:xx:xx" // BLE JDY-31 MAC address
+// #define TARGET_ADDRESS "01:b6:ec:fc:89:b9" // BLE JDY-31 MAC address
+#define TARGET_ADDRESS "xx:xx:xx:xx:xx:xx" // BLE HM-10  MAC address
 #define RECONNECT_TIMEOUT 10000            // 10-second reconnect timeout
 
 static BLEUUID SERVICE_UUID("FFE0"); // Service UUID (UART)
@@ -79,7 +80,18 @@ std::string value;
 
 int sensorData = 24;
 
-void dataProcessing()
+// Subscribe receiving notification
+void notifyCallback(BLERemoteCharacteristic *pBLERemoteCharacteristic, uint8_t *pData, size_t length, bool isNotify)
+{
+  Serial.print("\r\nReceived Data: ");
+
+  std::string value = std::string((char *)pData, length);
+  sensorData = atoi(value.c_str()); // Convert to integer
+
+  Serial.println(sensorData);
+}
+
+void BLEdataProcessing()
 {
   if (!pService)
   {
@@ -101,23 +113,33 @@ void dataProcessing()
     }
   }
 
-  // Read data
-  std::string value = pChar->readValue();
-  if (!value.empty()) // Check if data not empty
+  // Đăng ký nhận dữ liệu tự động qua Notify
+  if (pChar->canNotify())
   {
-    // sensorData = value;
-    sensorData = atoi(value.c_str());
-
-    Serial.print("Received Data: ");
-    Serial.println(value.c_str());
+    pChar->registerForNotify(notifyCallback);
   }
+  else
+  {
+    Serial.println("This characteristic does not support Notify!");
+  }
+
+  /* Read data (Only JDY-31) */
+  // std::string value = pChar->readValue();
+  // if (!value.empty()) // Check if data not empty
+  // {
+  //   // sensorData = value;
+  //   sensorData = atoi(value.c_str());
+
+  //   Serial.print("Received Data: ");
+  //   Serial.println(value.c_str());
+  // }
 }
 // ******************** End of BLE Data Processing ********************
 
 // ******************** Blynk Configuration ********************
-#define BLYNK_TEMPLATE_ID     "TEMPLATE_ID"
-#define BLYNK_TEMPLATE_NAME   "TEMPLATE_NAME"
-#define BLYNK_AUTH_TOKEN      "AUTH_TOKEN"
+#define BLYNK_TEMPLATE_ID "TEMPLATE_ID"
+#define BLYNK_TEMPLATE_NAME "TEMPLATE_NAME"
+#define BLYNK_AUTH_TOKEN "AUTH_TOKEN"
 
 /* Comment this out to disable prints and save space */
 #define BLYNK_PRINT Serial
@@ -127,8 +149,8 @@ void dataProcessing()
 #include <BlynkSimpleEsp32.h>
 
 // WiFi credentials.
-char ssid[] = "SSID";
-char pass[] = "PASS";
+char ssid[] = "ssid";
+char pass[] = "pass";
 
 #define BLYNK_PIN V1
 
@@ -138,7 +160,8 @@ void myTimerEvent()
 {
   // Note: Do not send more that 10 values per second.
   Blynk.virtualWrite(BLYNK_PIN, sensorData);
-  Serial.println("Send data: " + sensorData);
+  Serial.print("\r\nSend data: ");
+  Serial.println(sensorData);
 }
 // ******************** End of Blynk Configuration ********************
 
@@ -159,7 +182,7 @@ void setup()
   // ******************** Blynk Setup ********************
   Blynk.begin(BLYNK_AUTH_TOKEN, ssid, pass, "blynk.cloud", 80);
 
-  // Setup a function to be called every 1 seconds
+  // Setup a function to be called every 2 seconds
   timer.setInterval(1000L, myTimerEvent);
 }
 
@@ -191,5 +214,5 @@ void loop()
     }
   }
 
-  dataProcessing();
+  BLEdataProcessing();
 }
